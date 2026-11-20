@@ -205,8 +205,20 @@
       $("signals").textContent = stocks.filter(s =>
         String(s.signal ?? "").toUpperCase().includes("WATCHLIST")
       ).length;
-      $("updated").textContent = "Last scan: " +
-        safe(data.timestamp ?? data.generated_at ?? data.updated_at ?? "See individual stock dates");
+      
+const scanTime = data.generated_at_utc;
+
+$("updated").textContent = scanTime
+  ? "Last scan: " + new Date(scanTime).toLocaleString("en-MY", {
+      timeZone: "Asia/Kuala_Lumpur",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
+    }) + " MYT"
+  : "Last scan time unavailable";
 
       $("stocks").innerHTML = stocks.length
         ? stocks.map(renderStock).join("")
