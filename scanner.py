@@ -1,47 +1,93 @@
 
 from datetime import datetime, timezone
+import yfinance as yf
+import pandas as pd
 
-# AI Trading Scanner - Phase 1
-# Simulation only: no live market data yet.
+# AI Trading Scanner - Phase 2
+# Real historical prices, paper trading only
 
-CAPITAL = 250.00
-MAX_RISK = CAPITAL * 0.02
+CAPITAL_RM = 250.00
+RISK_PERCENT = 0.02
+MIN_RR = 2.0
 
-def analyze_trade(symbol, market, entry, stop_loss, take_profit):
-    risk_per_share = entry - stop_loss
-    reward_per_share = take_profit - entry
+# Example stocks from US and Bursa Malaysia
+WATCHLIST = {
+    "US": ["AAPL", "MSFT", "NVDA"],
+    "MY": ["1155.KL", "1023.KL", "5347.KL"]
+}
 
-    if risk_per_share <= 0 or reward_per_share <= 0:
-        return {"symbol": symbol, "signal": "INVALID SETUP"}
+def analyze_stock(symbol, market):
+    try:
+        stock = yf.Ticker(symbol)
+        df = stock.history(period="6mo", interval="1d")
 
-    reward_ratio = reward_per_share / risk_per_share
-    quantity = min(
-        int(MAX_RISK / risk_per_share),
-        int(CAPITAL / entry)
-    )
+        if df.empty or len(df) < 55:
+            print(f"{symbol}: Insufficient data")
+            return
 
-    return {
-        "symbol": symbol,
-        "market": market,
-        "signal": "PAPER SETUP" if reward_ratio >= 2 and quantity > 0 else "NO TRADE",
-        "entry": entry,
-        "stop_loss": stop_loss,
-        "take_profit": take_profit,
-        "quantity": quantity,
-        "risk_reward": round(reward_ratio, 2),
-        "estimated_risk": round(quantity * risk_per_share, 2),
-        "estimated_profit": round(quantity * reward_per_share, 2),
-    }
+        close = df["Close"]
+        sma20 = close.rolling(20).mean()
+        sma50 = close.rolling(50).mean()
 
-# Fictional examples, NOT real stock prices.
-examples = [
-    ("US-DEMO", "US", 10.00, 9.50, 11.00),
-    ("MY-DEMO", "MY", 1.00, 0.95, 1.10),
-]
+        delta = close.diff()
+        gain = delta.clip(lower=0)
+        loss = -delta.clip(upper=0)
 
-print("AI TRADING SCANNER - SIMULATION")
-print("Timestamp:", datetime.now(timezone.utc).isoformat())
-print("Capital: RM", CAPITAL)
+        avg_gain = gain.ewm(
+            alpha=1/14, adjust=False,
+            min_periods=14
+        ).mean()
+        avg_loss = loss.ewm(
+            alpha=1/14, adjust=False,
+            min_periods=14
+        ).mean()
 
-for example in examples:
-    print(analyze_trade(*example))
+        if avg_loss.iloc[-1] == 0:
+            rsi = 100.0 if avg_gain.iloc[-1] > 0 else 50.0
+        else:
+            rs = avg_gain.iloc[-1] / avg_loss.iloc[-1]
+            rsi = 100 - (100 / (1 + rs))
+
+        price = float(close.iloc[-1])
+        ma20 = float(sma20.iloc[-1])
+        ma50 = float(sma50.iloc[-1])
+
+        signal = "NO TRADE"
+
+        if price > ma20 > ma50 and 50 <= rsi <= 70:
+            signal = "PAPER WATCHLIST"
+
+        stop_loss = price * 0.95
+        take_profit = price * 1.10
+
+        # US stock prices are in USD; MY prices in MYR.
+        # Do not calculate cross-currency position sizes
+        # without a verified exchange rate.
+
+        print("---------------------------")
+        print("Symbol:", symbol)
+        print("Market:", market)
+        print("Price:", round(price, 2))
+        print("SMA20:", round(ma20, 2))
+        print("SMA50:", round(ma50, 2))
+        print("RSI14:", round(rsi, 2))
+        print("Signal:", signal)
+        print("Illustrative stop:", round(stop_loss, 2))
+        print("Illustrative target:", round(take_profit, 2))
+        print("Risk/Reward:", "1:2")
+        print("Capital (MYR):", CAPITAL_RM)
+        print("Max risk (MYR):",
+              round(CAPITAL_RM * RISK_PERCENT, 2))
+
+    except Exception as e:
+        print(f"{symbol}: ERROR - {e}")
+
+
+print("AI TRADING SCANNER - PHASE 2")
+print("Historical market data / Paper trading")
+print("Timestamp:",
+      datetime.now(timezone.utc).isoformat())
+
+for market, symbols in WATCHLIST.items():
+    for symbol in symbols:
+        analyze_stock(symbol, market)
