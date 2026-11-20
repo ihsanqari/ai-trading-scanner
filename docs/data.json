@@ -1,0 +1,81 @@
+{
+  "generated_at_utc": "2026-11-20T19:03:01+00:00",
+  "mode": "PAPER TRADING ONLY - historical data, no real orders",
+  "capital_rm": 250.0,
+  "risk_percent": 2.0,
+  "max_risk_rm": 5.0,
+  "stocks": [
+    {
+      "symbol": "AAPL",
+      "market": "US",
+      "currency": "USD",
+      "data_date": "2026-11-20",
+      "price": 345.42,
+      "sma20": 347.45,
+      "sma50": 341.64,
+      "rsi14": 49.2,
+      "signal": "NO TRADE",
+      "plan": null
+    },
+    {
+      "symbol": "MSFT",
+      "market": "US",
+      "currency": "USD",
+      "data_date": "2026-11-20",
+      "price": 490.71,
+      "sma20": 522.35,
+      "sma50": 519.0,
+      "rsi14": 36.91,
+      "signal": "NO TRADE",
+      "plan": null
+    },
+    {
+      "symbol": "NVDA",
+      "market": "US",
+      "currency": "USD",
+      "data_date": "2026-11-20",
+      "price": 135.82,
+      "sma20": 181.97,
+      "sma50": 207.21,
+      "rsi14": 17.05,
+      "signal": "NO TRADE",
+      "plan": null
+    },
+    {
+      "symbol": "1155.KL",
+      "market": "MY",
+      "currency": "MYR",
+      "data_date": "2026-11-19",
+      "price": 9.93,
+      "sma20": 9.99,
+      "sma50": 10.01,
+      "rsi14": 45.56,
+      "signal": "NO TRADE",
+      "plan": null
+    },
+    {
+      "symbol": "1023.KL",
+      "market": "MY",
+      "currency": "MYR",
+      "data_date": "2026-11-19",
+      "price": 7.02,
+      "sma20": 7.05,
+      "sma50": 7.38,
+      "rsi14": 41.16,
+      "signal": "NO TRADE",
+      "plan": null
+    },
+    {
+      "symbol": "5347.KL",
+      "market": "MY",
+      "currency": "MYR",
+      "data_date": "2026-11-19",
+      "price": 12.6,
+      "sma20": 13.04,
+      "sma50": 13.02,
+      "rsi14": 30.69,
+      "signal": "NO TRADE",
+      "plan": null
+    }
+  ]
+}
