@@ -26,11 +26,13 @@ def analyze_stock(symbol, market):
             return
 
         
-close = pd.to_numeric(df["Close"], errors="coerce").dropna()
 
-if len(close) < 55:
-    print(f"{symbol}: Insufficient valid closing prices")
-    return
+        close = pd.to_numeric(df["Close"], errors="coerce").dropna()
+
+        if len(close) < 55:
+            print(f"{symbol}: Insufficient valid closing prices")
+            return
+
 
         sma20 = close.rolling(20).mean()
         sma50 = close.rolling(50).mean()
