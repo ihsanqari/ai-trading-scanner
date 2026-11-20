@@ -1,0 +1,226 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>AI Trading Scanner</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #0b1020;
+      color: #eef2ff;
+      padding: 20px 16px 40px;
+    }
+    main { max-width: 900px; margin: auto; }
+    h1 { font-size: 25px; margin: 8px 0; }
+    h2 { font-size: 19px; margin: 0 0 14px; }
+    p { color: #94a3b8; }
+    .tag {
+      color: #93c5fd;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      font-weight: 700;
+    }
+    .panel, .stock {
+      background: #151d32;
+      border: 1px solid #29344d;
+      border-radius: 17px;
+      padding: 18px;
+    }
+    .panel { margin: 22px 0; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .value { font-size: 25px; font-weight: 750; }
+    .small { color: #94a3b8; font-size: 12px; }
+    .grid { display: grid; gap: 14px; }
+    .stock-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .symbol { font-size: 21px; font-weight: 750; }
+    .badge {
+      border-radius: 20px;
+      padding: 7px 10px;
+      font-size: 11px;
+      font-weight: 750;
+      background: #334155;
+      color: #e2e8f0;
+    }
+    .watch { background: #14532d; color: #bbf7d0; }
+    .price { font-size: 27px; font-weight: 750; margin: 16px 0; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .metric {
+      background: #0b1020;
+      border-radius: 10px;
+      padding: 11px 8px;
+    }
+    .metric strong { display: block; margin-top: 5px; }
+    .plan {
+      border-top: 1px solid #29344d;
+      margin-top: 15px;
+      padding-top: 12px;
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.7;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-weight: 700;
+    }
+    .footer { font-size: 12px; line-height: 1.6; }
+    @media(min-width: 650px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .stats { grid-template-columns: repeat(4, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <div class="tag">PAPER TRADING DASHBOARD</div>
+  <h1>AI Trading Scanner</h1>
+  <p>US & Bursa Malaysia · SMA20 / SMA50 / RSI14</p>
+
+  <section class="stats">
+    <div class="panel">
+      <div class="small">Simulation Capital</div>
+      <div class="value">RM250</div>
+    </div>
+    <div class="panel">
+      <div class="small">Max Risk / Trade</div>
+      <div class="value">RM5</div>
+    </div>
+    <div class="panel">
+      <div class="small">Stocks Scanned</div>
+      <div class="value" id="count">—</div>
+    </div>
+    <div class="panel">
+      <div class="small">Watchlist Signals</div>
+      <div class="value" id="signals">—</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Market Overview</h2>
+    <p id="updated">Loading market data...</p>
+    <button onclick="loadData()">Refresh Data</button>
+    <p class="small" id="status"></p>
+  </section>
+
+  <h2>Stock Scanner</h2>
+  <div class="grid" id="stocks"></div>
+
+  <p class="footer">
+    Educational use only. Historical market data may be delayed.
+    Signals are not financial advice or live trade orders.
+  </p>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function safe(value) {
+    return String(value ?? "—").replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;",
+      '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+
+  function number(value) {
+    const n = Number(value);
+    return value == null || !Number.isFinite(n)
+      ? "—" : n.toFixed(2);
+  }
+
+  function getStocks(data) {
+    if (Array.isArray(data)) return data;
+    for (const key of ["results", "stocks", "data", "scan_results"]) {
+      if (Array.isArray(data?.[key])) return data[key];
+    }
+    return [];
+  }
+
+  function renderStock(s) {
+    const symbol = safe(s.symbol ?? s.ticker);
+    const signal = String(s.signal ?? "NO TRADE");
+    const watch = signal.toUpperCase().includes("WATCHLIST");
+    const currency = safe(s.currency ?? (s.market === "MY" ? "MYR" : "USD"));
+    const plan = s.plan;
+
+    return `
+      <article class="stock">
+        <div class="stock-head">
+          <div>
+            <div class="symbol">${symbol}</div>
+            <div class="small">${safe(s.market)} · ${safe(s.data_date)}</div>
+          </div>
+          <span class="badge ${watch ? "watch" : ""}">${safe(signal)}</span>
+        </div>
+        <div class="price">${currency} ${number(s.price)}</div>
+        <div class="metrics">
+          <div class="metric"><span class="small">SMA20</span><strong>${number(s.sma20)}</strong></div>
+          <div class="metric"><span class="small">SMA50</span><strong>${number(s.sma50)}</strong></div>
+          <div class="metric"><span class="small">RSI14</span><strong>${number(s.rsi14)}</strong></div>
+        </div>
+        <div class="plan">
+          ${plan && typeof plan === "object"
+            ? Object.entries(plan).map(([k,v]) =>
+                `<div>${safe(k)}: ${safe(v)}</div>`
+              ).join("")
+            : "No trade plan — waiting for a valid setup."}
+        </div>
+      </article>`;
+  }
+
+  async function loadData() {
+    $("status").textContent = "Fetching latest saved scan...";
+    try {
+      const response = await fetch("./data.json?t=" + Date.now(), {
+        cache: "no-store"
+      });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const data = await response.json();
+      const stocks = getStocks(data);
+
+      $("count").textContent = stocks.length;
+      $("signals").textContent = stocks.filter(s =>
+        String(s.signal ?? "").toUpperCase().includes("WATCHLIST")
+      ).length;
+      $("updated").textContent = "Last scan: " +
+        safe(data.timestamp ?? data.generated_at ?? data.updated_at ?? "See individual stock dates");
+
+      $("stocks").innerHTML = stocks.length
+        ? stocks.map(renderStock).join("")
+        : '<div class="panel">No stock records found. Check data.json structure.</div>';
+
+      $("status").textContent = "Data loaded successfully.";
+    } catch (err) {
+      $("status").textContent = "Unable to load data: " + err.message;
+      $("stocks").innerHTML =
+        '<div class="panel">Check GitHub Pages and docs/data.json.</div>';
+    }
+  }
+
+  loadData();
+</script>
+</body>
+</html>
