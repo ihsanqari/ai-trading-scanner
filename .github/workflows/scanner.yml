@@ -6,8 +6,14 @@ permissions:
 
 on:
   workflow_dispatch:
+  
   schedule:
-    - cron: "0 2 * * 1-5"
+    # Bursa Malaysia: 6:00 PM MYT
+    - cron: "0 10 * * 1-5"
+
+    # US Market: 6:30 AM MYT
+    - cron: "30 22 * * 1-5"
+
 
 jobs:
   scan:
